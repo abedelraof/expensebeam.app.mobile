@@ -177,22 +177,16 @@ class _DashboardScreenState extends State<DashboardScreen>
       }
 
       // Navigate to confirm screen
-      final added = await Navigator.push<bool>(
+      await Navigator.push<bool>(
         context,
         MaterialPageRoute(
           builder: (_) => ConfirmExpensesScreen(expenses: expenses),
         ),
       );
 
-      if (added == true) {
-        _expenseCtrl.clear();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Expenses added ✓'),
-            backgroundColor: AppTheme.success,
-          ),
-        );
-      }
+      // Clear field and lock focus away from the textarea
+      _expenseCtrl.clear();
+      if (mounted) FocusManager.instance.primaryFocus?.unfocus();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -536,10 +530,10 @@ class _DashboardScreenState extends State<DashboardScreen>
             _buildTipBanner(),
             const SizedBox(height: 24),
             _buildQuickExpense(),
-            const SizedBox(height: 12),
+            const SizedBox(height: 24),
             _buildMonthlyStats(),
             if (_goalsLoading || _goals.isNotEmpty) ...[
-              const SizedBox(height: 28),
+              const SizedBox(height: 24),
               _buildGoals(),
             ],
             const SizedBox(height: 28),
@@ -635,6 +629,7 @@ class _DashboardScreenState extends State<DashboardScreen>
             controller: _expenseCtrl,
             maxLines: 4,
             minLines: 4,
+            autofocus: false,
             textInputAction: TextInputAction.newline,
             decoration: InputDecoration(
               hintText:
@@ -674,7 +669,7 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
   }
 
-  // ── Monthly stats strip ───────────────────────────────────────────────
+  // ── Monthly stats grid ───────────────────────────────────────────────
   Widget _buildMonthlyStats() {
     final s        = _stats ?? {};
     final currency = s['currency']?.toString() ?? 'EGP';
@@ -682,86 +677,138 @@ class _DashboardScreenState extends State<DashboardScreen>
     final txCount  = s['transactionCount'] ?? 0;
     final topCat   = s['topCategory']?.toString() ?? '—';
     final daily    = (s['dailyAverage'] as num? ?? 0).toDouble();
-    final month    = ['Jan','Feb','Mar','Apr','May','Jun',
-                      'Jul','Aug','Sep','Oct','Nov','Dec']
+    final month    = ['January','February','March','April','May','June',
+                      'July','August','September','October','November','December']
                     [DateTime.now().month - 1];
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: AppTheme.accent.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppTheme.accent.withValues(alpha: 0.15)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Month label
-          Text(
-            '$month overview',
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 2, bottom: 12),
+          child: Text(
+            '$month at a Glance',
             style: const TextStyle(
-              fontSize: 11,
+              fontSize: 13,
               fontWeight: FontWeight.w700,
-              color: AppTheme.accent,
-              letterSpacing: 0.6,
-            ),
-          ),
-          const SizedBox(height: 10),
-          // Stats row
-          Row(
-            children: [
-              _statChip(Icons.receipt_long_outlined,
-                  formatCurrency(spent, currency), 'Spent'),
-              _statDivider(),
-              _statChip(Icons.swap_horiz_outlined,
-                  '$txCount', 'Transactions'),
-              _statDivider(),
-              _statChip(Icons.category_outlined, topCat, 'Top Category'),
-              _statDivider(),
-              _statChip(Icons.today_outlined,
-                  formatCurrency(daily, currency), 'Daily avg'),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _statChip(IconData icon, String value, String label) {
-    return Expanded(
-      child: Column(
-        children: [
-          Icon(icon, size: 15, color: AppTheme.accent),
-          const SizedBox(height: 3),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.bold,
               color: AppTheme.primary,
+              letterSpacing: 0.3,
             ),
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
           ),
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 9,
-              color: AppTheme.textSecondary,
+        ),
+        Row(
+          children: [
+            Expanded(
+              child: _statCard(
+                icon: Icons.receipt_long_outlined,
+                iconColor: AppTheme.accent,
+                iconBg: const Color(0xFF2B7BE0),
+                value: formatCurrency(spent, currency),
+                label: 'Total Spent',
+              ),
             ),
-            textAlign: TextAlign.center,
+            const SizedBox(width: 12),
+            Expanded(
+              child: _statCard(
+                icon: Icons.swap_horiz_outlined,
+                iconColor: AppTheme.success,
+                iconBg: AppTheme.success,
+                value: '$txCount',
+                label: 'Transactions',
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _statCard(
+                icon: Icons.category_outlined,
+                iconColor: AppTheme.warning,
+                iconBg: AppTheme.warning,
+                value: topCat,
+                label: 'Top Category',
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _statCard(
+                icon: Icons.today_outlined,
+                iconColor: AppTheme.danger,
+                iconBg: AppTheme.danger,
+                value: formatCurrency(daily, currency),
+                label: 'Daily Average',
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _statCard({
+    required IconData icon,
+    required Color iconColor,
+    required Color iconBg,
+    required String value,
+    required String label,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.fieldBorder),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: iconBg.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, size: 20, color: iconColor),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.primary,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: AppTheme.textSecondary,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
-
-  Widget _statDivider() => Container(
-        width: 1, height: 32,
-        color: AppTheme.accent.withValues(alpha: 0.15),
-        margin: const EdgeInsets.symmetric(horizontal: 4),
-      );
 
   // ── Section: Savings Goals ────────────────────────────────────────────
   Widget _buildGoals() {

@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import '../../core/api/api_client.dart';
 import '../../core/theme/app_theme.dart';
+import 'expense_success_screen.dart';
 
 // ── Local category model ──────────────────────────────────────────────────────
 class _Category {
@@ -104,7 +105,13 @@ class _ConfirmExpensesScreenState extends State<ConfirmExpensesScreen> {
     try {
       await ApiClient.post('/expenses', data: {'expenses': expensesList});
       setState(() => _submitting = false);
-      if (mounted) Navigator.pop(context, true);
+      if (!mounted) return;
+      await Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ExpenseSuccessScreen(expenses: expensesList),
+        ),
+      );
     } catch (e) {
       setState(() => _submitting = false);
       if (!mounted) return;
@@ -293,7 +300,7 @@ class _ExpenseCard extends StatefulWidget {
 }
 
 class _ExpenseCardState extends State<_ExpenseCard> {
-  bool _expanded = true;
+  bool _expanded = false;
   static const _currencies = ['EGP', 'USD', 'EUR', 'GBP', 'SAR', 'AED'];
 
   _Category? get _selectedCategory {
@@ -336,48 +343,43 @@ class _ExpenseCardState extends State<_ExpenseCard> {
         child: Column(
           children: [
             // ── Header ──────────────────────────────────────────────────
-            InkWell(
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(14)),
-              onTap: () => setState(() => _expanded = !_expanded),
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 28, height: 28,
-                      decoration: BoxDecoration(
-                        color: AppTheme.accent.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Center(
-                        child: Text('${widget.index + 1}',
-                            style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
-                                color: AppTheme.accent)),
-                      ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
+              child: Row(
+                children: [
+                  Container(
+                    width: 28, height: 28,
+                    decoration: BoxDecoration(
+                      color: AppTheme.accent.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            f.descCtrl.text.isEmpty
-                                ? 'Expense ${widget.index + 1}'
-                                : f.descCtrl.text,
-                            style: const TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 14,
-                                color: AppTheme.primary),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                    child: Center(
+                      child: Text('${widget.index + 1}',
+                          style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.accent)),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          f.descCtrl.text.isEmpty
+                              ? 'Expense ${widget.index + 1}'
+                              : f.descCtrl.text,
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                              color: AppTheme.primary),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        if (f.category != null || f.subcategory != null)
                           Text(
                             [
-                              if (f.amountCtrl.text.isNotEmpty)
-                                '${f.amountCtrl.text} ${f.currency}',
                               if (f.category != null) f.category!,
                               if (f.subcategory != null) f.subcategory!,
                             ].join(' · '),
@@ -387,23 +389,43 @@ class _ExpenseCardState extends State<_ExpenseCard> {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
-                        ],
-                      ),
+                        const SizedBox(height: 2),
+                        Text(
+                          () {
+                            const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+                            return '${f.date.day}/${months[f.date.month - 1]}/${f.date.year}';
+                          }(),
+                          style: const TextStyle(
+                              fontSize: 12,
+                              color: AppTheme.textSecondary),
+                        ),
+                        const SizedBox(height: 2),
+                        if (f.amountCtrl.text.isNotEmpty)
+                          Text(
+                            '${f.amountCtrl.text} ${f.currency}',
+                            style: const TextStyle(
+                                fontSize: 12,
+                                color: AppTheme.textSecondary),
+                          ),
+                      ],
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.delete_outline,
-                          color: AppTheme.danger, size: 20),
-                      onPressed: widget.onDelete,
-                      tooltip: 'Remove',
+                  ),
+                  IconButton(
+                    icon: Icon(
+                      _expanded ? Icons.edit_off_outlined : Icons.edit_outlined,
+                      color: _expanded ? AppTheme.textSecondary : AppTheme.accent,
+                      size: 20,
                     ),
-                    Icon(
-                      _expanded
-                          ? Icons.keyboard_arrow_up
-                          : Icons.keyboard_arrow_down,
-                      color: AppTheme.textSecondary,
-                    ),
-                  ],
-                ),
+                    onPressed: () => setState(() => _expanded = !_expanded),
+                    tooltip: _expanded ? 'Collapse' : 'Edit',
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline,
+                        color: AppTheme.danger, size: 20),
+                    onPressed: widget.onDelete,
+                    tooltip: 'Remove',
+                  ),
+                ],
               ),
             ),
 
