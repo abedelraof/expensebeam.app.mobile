@@ -30,7 +30,7 @@ class ExpenseTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Dismissible(
-      key: Key(expense.id),
+      key: Key(expense.id.isNotEmpty ? expense.id : expense.hashCode.toString()),
       direction: DismissDirection.endToStart,
       background: Container(
         alignment: Alignment.centerRight,

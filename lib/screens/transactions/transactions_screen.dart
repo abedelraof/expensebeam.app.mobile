@@ -64,16 +64,35 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       };
       final res = await ApiClient.get('/expenses', params: params);
       final data = res.data;
-      final list =
-          data is List ? data : (data['expenses'] ?? data['data'] ?? []);
-      final fetched =
-          (list as List).map((e) => Expense.fromJson(e)).toList();
+
+      List<dynamic> list = [];
+      if (data is List) {
+        list = data;
+      } else if (data is Map) {
+        for (final key in ['expenses', 'data', 'items', 'results']) {
+          if (data[key] is List) { list = data[key]; break; }
+        }
+      }
+
+      final fetched = <Expense>[];
+      for (final e in list) {
+        try { fetched.add(Expense.fromJson(Map<String, dynamic>.from(e))); }
+        catch (_) {}
+      }
+
       setState(() {
         _expenses.addAll(fetched);
         _hasMore = fetched.length == 20;
         _page++;
       });
-    } catch (_) {}
+
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load transactions: $e')),
+        );
+      }
+    }
     setState(() => _loading = false);
   }
 
