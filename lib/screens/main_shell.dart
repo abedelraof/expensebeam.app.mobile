@@ -4,12 +4,20 @@ import '../core/theme/app_theme.dart';
 import '../core/providers/auth_provider.dart';
 import 'dashboard/dashboard_screen.dart';
 import 'transactions/transactions_screen.dart';
+import 'recurring/recurring_screen.dart';
+import 'income/income_screen.dart';
 import 'reports/reports_screen.dart';
 import 'accounts/accounts_screen.dart';
 import 'settings/settings_screen.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
+
+  static final GlobalKey<_MainShellState> shellKey = GlobalKey<_MainShellState>();
+
+  static void goToDashboard() {
+    shellKey.currentState?._navigate(0);
+  }
 
   @override
   State<MainShell> createState() => _MainShellState();
@@ -22,6 +30,8 @@ class _MainShellState extends State<MainShell> {
   static const _screens = [
     DashboardScreen(),
     TransactionsScreen(),
+    RecurringScreen(),
+    IncomeScreen(),
     ReportsScreen(),
     AccountsScreen(),
     SettingsScreen(),
@@ -30,6 +40,8 @@ class _MainShellState extends State<MainShell> {
   static const _navItems = [
     (label: 'Dashboard',    icon: Icons.home_outlined,                    filled: Icons.home),
     (label: 'Transactions', icon: Icons.list_alt_outlined,                filled: Icons.list_alt),
+    (label: 'Recurring',    icon: Icons.repeat_outlined,                  filled: Icons.repeat),
+    (label: 'Income',       icon: Icons.savings_outlined,                 filled: Icons.savings),
     (label: 'Reports',      icon: Icons.bar_chart_outlined,               filled: Icons.bar_chart),
     (label: 'Accounts',     icon: Icons.account_balance_wallet_outlined,  filled: Icons.account_balance_wallet),
     (label: 'Settings',     icon: Icons.settings_outlined,                filled: Icons.settings),

@@ -18,13 +18,19 @@ class Recurring {
   });
 
   factory Recurring.fromJson(Map<String, dynamic> j) => Recurring(
-        id: j['_id'] ?? j['id'] ?? '',
-        description: j['description'] ?? '',
-        amount: (j['amount'] as num).toDouble(),
-        currency: j['currency'] ?? 'EGP',
-        interval: j['interval'] ?? 'monthly',
-        nextDue: DateTime.parse(j['nextDue']),
-        category: j['category'],
+        id: (j['_id'] ?? j['id'] ?? j['recurring_id'] ?? '').toString(),
+        description: j['description']?.toString() ?? '',
+        amount: j['amount'] is num
+            ? (j['amount'] as num).toDouble()
+            : double.tryParse(j['amount']?.toString() ?? '0') ?? 0,
+        currency: j['currency']?.toString() ?? 'EGP',
+        interval: j['interval']?.toString() ?? j['frequency']?.toString() ?? 'monthly',
+        nextDue: j['next_due'] != null
+            ? (DateTime.tryParse(j['next_due'].toString()) ?? DateTime.now())
+            : j['nextDue'] != null
+                ? (DateTime.tryParse(j['nextDue'].toString()) ?? DateTime.now())
+                : DateTime.now(),
+        category: (j['category_name'] ?? j['category'])?.toString(),
       );
 
   Map<String, dynamic> toJson() => {

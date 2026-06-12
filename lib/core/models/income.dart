@@ -18,13 +18,17 @@ class Income {
   });
 
   factory Income.fromJson(Map<String, dynamic> j) => Income(
-        id: j['_id'] ?? j['id'] ?? '',
-        amount: (j['amount'] as num).toDouble(),
-        currency: j['currency'] ?? 'EGP',
-        description: j['description'] ?? '',
-        source: j['source'] ?? 'Other',
-        date: DateTime.parse(j['date']),
-        notes: j['notes'],
+        id: (j['_id'] ?? j['id'] ?? j['income_id'] ?? '').toString(),
+        amount: j['amount'] is num
+            ? (j['amount'] as num).toDouble()
+            : double.tryParse(j['amount']?.toString() ?? '0') ?? 0,
+        currency: j['currency']?.toString() ?? 'EGP',
+        description: j['description']?.toString() ?? '',
+        source: j['source']?.toString() ?? 'Other',
+        date: j['date'] != null
+            ? (DateTime.tryParse(j['date'].toString()) ?? DateTime.now())
+            : DateTime.now(),
+        notes: j['notes']?.toString(),
       );
 
   Map<String, dynamic> toJson() => {

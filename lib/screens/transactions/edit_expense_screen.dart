@@ -3,6 +3,8 @@ import 'package:intl/intl.dart';
 import '../../core/api/api_client.dart';
 import '../../core/models/expense.dart';
 import '../../core/theme/app_theme.dart';
+import '../../widgets/shake_widget.dart';
+import '../main_shell.dart';
 
 class _Category {
   final String name;
@@ -31,6 +33,10 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
   bool _catsLoading                = true;
   String? _selectedCategory;
   String? _selectedSubcategory;
+
+  // Shake controllers
+  final _descShake   = ShakeController();
+  final _amountShake = ShakeController();
 
   @override
   void initState() {
@@ -99,7 +105,15 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
   }
 
   Future<void> _save() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+      // Shake invalid fields
+      if (_descCtrl.text.trim().isEmpty) _descShake.shake();
+      if (_amountCtrl.text.trim().isEmpty ||
+          double.tryParse(_amountCtrl.text.trim()) == null) {
+        _amountShake.shake();
+      }
+      return;
+    }
     setState(() => _saving = true);
     try {
       final data = {
@@ -173,41 +187,115 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
           children: [
 
+            // ── AI hint banner (Add only) ────────────────────────────────
+            if (isNew) ...[
+              GestureDetector(
+                onTap: () {
+                  Navigator.of(context).popUntil((r) => r.isFirst);
+                  MainShell.goToDashboard();
+                },
+                child: Container(
+                  padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        AppTheme.accent.withValues(alpha: 0.08),
+                        AppTheme.accent.withValues(alpha: 0.04),
+                      ],
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                    ),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                        color: AppTheme.accent.withValues(alpha: 0.25)),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 38, height: 38,
+                        decoration: BoxDecoration(
+                          color: AppTheme.accent.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.auto_awesome,
+                            size: 20, color: AppTheme.accent),
+                      ),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Try AI Expense Parsing',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: AppTheme.accent,
+                              ),
+                            ),
+                            SizedBox(height: 3),
+                            Text(
+                              'Describe multiple expenses in plain text and let AI fill everything for you.',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: AppTheme.textSecondary,
+                                height: 1.4,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      const Icon(Icons.arrow_forward_ios,
+                          size: 13, color: AppTheme.accent),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+
             // ── Description ─────────────────────────────────────────────
             _label('Description'),
             const SizedBox(height: 4),
-            TextFormField(
-              controller: _descCtrl,
-              textCapitalization: TextCapitalization.sentences,
-              decoration: _inputDec(
-                hint: 'e.g. Coffee, Uber, Groceries',
-                icon: Icons.edit_outlined,
+            ShakeWidget(
+              controller: _descShake,
+              child: TextFormField(
+                controller: _descCtrl,
+                textCapitalization: TextCapitalization.sentences,
+                decoration: _inputDec(
+                  hint: 'e.g. Coffee, Uber, Groceries',
+                  icon: Icons.edit_outlined,
+                ),
+                validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null,
               ),
-              validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null,
             ),
             const SizedBox(height: 14),
 
             // ── Amount ──────────────────────────────────────────────────
             _label('Amount'),
             const SizedBox(height: 4),
-            TextFormField(
-              controller: _amountCtrl,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: _inputDec(
-                hint: '0.00',
-                icon: Icons.attach_money,
-                suffix: Text(
-                  widget.expense?.currency ?? 'EGP',
-                  style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.textSecondary),
+            ShakeWidget(
+              controller: _amountShake,
+              child: TextFormField(
+                controller: _amountCtrl,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                decoration: _inputDec(
+                  hint: '0.00',
+                  icon: Icons.attach_money,
+                  suffix: Text(
+                    widget.expense?.currency ?? 'EGP',
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.textSecondary),
+                  ),
                 ),
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) return 'Required';
+                  if (double.tryParse(v.trim()) == null) return 'Invalid number';
+                  return null;
+                },
               ),
-              validator: (v) {
-                if (v == null || v.trim().isEmpty) return 'Required';
-                if (double.tryParse(v.trim()) == null) return 'Invalid number';
-                return null;
-              },
             ),
             const SizedBox(height: 14),
 

@@ -45,7 +45,7 @@ class _ExpenseBeamAppState extends State<ExpenseBeamApp> {
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       themeMode: themeProvider.mode,
-      home: auth.isAuthenticated ? const MainShell() : const AuthScreen(),
+      home: auth.isAuthenticated ? MainShell(key: MainShell.shellKey) : const AuthScreen(),
     );
   }
 }

@@ -115,7 +115,6 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
           final result = await Navigator.push(
@@ -128,6 +127,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
             if (result is String) _flashHighlight(result);
           }
         },
+        backgroundColor: AppTheme.accent,
+        foregroundColor: Colors.white,
         child: const Icon(Icons.add),
       ),
       body: Column(
