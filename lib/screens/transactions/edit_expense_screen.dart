@@ -127,7 +127,7 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
       };
       dynamic res;
       if (widget.expense == null) {
-        res = await ApiClient.post('/expenses', data: data);
+        res = await ApiClient.post('/expenses', data: {'expenses': [data]});
       } else {
         res = await ApiClient.put('/expenses/${widget.expense!.id}', data: data);
       }
