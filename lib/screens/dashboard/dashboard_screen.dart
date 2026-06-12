@@ -524,7 +524,10 @@ class _DashboardScreenState extends State<DashboardScreen>
         Scaffold(
           body: RefreshIndicator(
         onRefresh: () async { await _loadGoals(); await _loadStats(); },
-        child: ListView(
+        child: GestureDetector(
+          onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+          behavior: HitTestBehavior.opaque,
+          child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
           children: [
             _buildTipBanner(),
@@ -539,6 +542,7 @@ class _DashboardScreenState extends State<DashboardScreen>
             const SizedBox(height: 28),
             _buildAskAI(),
           ],
+        ),
         ),
       ),
         ),
