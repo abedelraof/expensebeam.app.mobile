@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../core/api/api_client.dart';
 import '../../core/models/expense.dart';
+import '../../core/theme/app_theme.dart';
 import '../../widgets/expense_tile.dart';
 import 'edit_expense_screen.dart';
+import 'search_screen.dart';
 
 class TransactionsScreen extends StatefulWidget {
   const TransactionsScreen({super.key});
@@ -21,6 +23,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   String _sort = 'date_desc';
   DateTimeRange? _dateRange;
   final _scrollCtrl = ScrollController();
+  String? _highlightedId;
 
   @override
   void initState() {
@@ -112,45 +115,69 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
-          await Navigator.push(
+          final result = await Navigator.push(
               context,
               MaterialPageRoute(
                   builder: (_) => const EditExpenseScreen()));
-          _load(reset: true);
+          if (result != null) {
+            _showSavedSnackbar(isNew: true);
+            await _load(reset: true);
+            if (result is String) _flashHighlight(result);
+          }
         },
         child: const Icon(Icons.add),
       ),
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-              controller: _searchCtrl,
-              decoration: InputDecoration(
-                hintText: 'Search expenses...',
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: _searchCtrl.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          _searchCtrl.clear();
-                          _load(reset: true);
-                        })
-                    : null,
-              ),
-              onChanged: (_) => _load(reset: true),
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+            child: GestureDetector(
+              onTap: () async {
+                await Navigator.push(
+                  context,
+                  PageRouteBuilder(
+                    pageBuilder: (_, __, ___) => const SearchScreen(),
+                    transitionsBuilder: (_, anim, __, child) =>
+                        FadeTransition(opacity: anim, child: child),
+                    transitionDuration: const Duration(milliseconds: 200),
                   ),
+                );
+                _load(reset: true);
+              },
+              child: Container(
+                height: 48,
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).cardColor,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: AppTheme.fieldBorder),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.04),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
-                IconButton(
-                  icon: const Icon(Icons.filter_list),
-                  onPressed: _showFilterSheet,
+                child: Row(
+                  children: [
+                    const Icon(Icons.search,
+                        color: AppTheme.textSecondary, size: 20),
+                    const SizedBox(width: 10),
+                    const Expanded(
+                      child: Text('Search expenses...',
+                          style: TextStyle(
+                              color: AppTheme.textSecondary,
+                              fontSize: 14)),
+                    ),
+                    const Icon(Icons.tune,
+                        color: AppTheme.textSecondary, size: 18),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
           if (_dateRange != null)
@@ -184,14 +211,19 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                       }
                       return ExpenseTile(
                         expense: _expenses[i],
+                        highlighted: _highlightedId == _expenses[i].id,
                         onDeleted: () => _load(reset: true),
                         onTap: () async {
-                          await Navigator.push(
+                          final result = await Navigator.push(
                               context,
                               MaterialPageRoute(
                                   builder: (_) => EditExpenseScreen(
                                       expense: _expenses[i])));
-                          _load(reset: true);
+                          if (result != null) {
+                            _showSavedSnackbar(isNew: false);
+                            await _load(reset: true);
+                            if (result is String) _flashHighlight(result);
+                          }
                         },
                       );
                     },
@@ -200,6 +232,29 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
         ],
       ),
     );
+  }
+
+  void _showSavedSnackbar({required bool isNew}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(children: [
+          const Icon(Icons.check_circle, color: Colors.white, size: 18),
+          const SizedBox(width: 10),
+          Text(isNew ? 'Expense added successfully' : 'Expense updated successfully'),
+        ]),
+        backgroundColor: const Color(0xFF10B981),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
+  void _flashHighlight(String id) {
+    setState(() => _highlightedId = id);
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) setState(() => _highlightedId = null);
+    });
   }
 
   void _showFilterSheet() {

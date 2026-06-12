@@ -7,12 +7,14 @@ class ExpenseTile extends StatelessWidget {
   final Expense expense;
   final VoidCallback? onDeleted;
   final VoidCallback? onTap;
+  final bool highlighted;
 
   const ExpenseTile({
     super.key,
     required this.expense,
     this.onDeleted,
     this.onTap,
+    this.highlighted = false,
   });
 
   Future<void> _delete(BuildContext context) async {
@@ -56,14 +58,41 @@ class ExpenseTile extends StatelessWidget {
       child: Card(
         child: ListTile(
           onTap: onTap,
-          leading: CircleAvatar(
-            child: Text(
-                expense.category?.substring(0, 1).toUpperCase() ?? 'E'),
+          leading: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              CircleAvatar(
+                child: Text(
+                  (expense.category?.isNotEmpty == true
+                          ? expense.category!.substring(0, 1).toUpperCase()
+                          : null) ??
+                      'E',
+                ),
+              ),
+              Positioned(
+                right: -2,
+                bottom: -2,
+                child: AnimatedOpacity(
+                  opacity: highlighted ? 1.0 : 0.0,
+                  duration: const Duration(milliseconds: 400),
+                  curve: Curves.easeInOut,
+                  child: Container(
+                    width: 18,
+                    height: 18,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF10B981),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.check, size: 12, color: Colors.white),
+                  ),
+                ),
+              ),
+            ],
           ),
           title: Text(expense.description,
               maxLines: 1, overflow: TextOverflow.ellipsis),
           subtitle: Text(
-              '${expense.category ?? 'Uncategorized'} • ${formatDate(expense.date)}'),
+              '${expense.category?.isNotEmpty == true ? expense.category : 'Uncategorized'} • ${formatDate(expense.date)}'),
           trailing: Text(
             formatCurrency(expense.amount, expense.currency),
             style: TextStyle(
