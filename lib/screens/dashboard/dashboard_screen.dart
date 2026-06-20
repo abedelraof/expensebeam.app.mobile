@@ -27,6 +27,8 @@ class _DashboardScreenState extends State<DashboardScreen>
   final _speech        = SpeechToText();
   bool _isListening    = false;
   bool _speechAvailable = false;
+  int _recordingSeconds = 0;
+  final _recordingWatch = Stopwatch();
 
   // Scan animation
   late final AnimationController _scanCtrl;
@@ -77,6 +79,12 @@ class _DashboardScreenState extends State<DashboardScreen>
       vsync: this,
       duration: const Duration(milliseconds: 900),
     );
+    _recCtrl.addListener(() {
+      if (_isListening) {
+        final secs = _recordingWatch.elapsed.inSeconds;
+        if (secs != _recordingSeconds) setState(() => _recordingSeconds = secs);
+      }
+    });
   }
 
   @override
@@ -155,7 +163,9 @@ class _DashboardScreenState extends State<DashboardScreen>
   Future<void> _startListening() async {
     if (!_speechAvailable) return;
     _partialTranscript = '';
+    _recordingWatch..reset()..start();
     _recCtrl.repeat(reverse: true);
+    if (mounted) setState(() => _isListening = true);
     await _speech.listen(
       onResult: (result) {
         _partialTranscript = result.recognizedWords;
@@ -163,25 +173,32 @@ class _DashboardScreenState extends State<DashboardScreen>
       listenFor: const Duration(seconds: 300),
       pauseFor: const Duration(seconds: 300),
       localeId: 'en_US',
+      partialResults: true,
     );
-    if (mounted) setState(() => _isListening = true);
   }
 
   Future<void> _submitRecording() async {
     await _speech.stop();
     _recCtrl.stop();
     if (!mounted) return;
-    setState(() => _isListening = false);
-    if (_partialTranscript.isNotEmpty) {
-      _expenseCtrl.text = _partialTranscript;
+    final transcript = _partialTranscript.trim();
+    _recordingWatch.stop();
+    setState(() { _isListening = false; _recordingSeconds = 0; });
+    if (transcript.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No speech detected — check microphone permission.')),
+      );
+      return;
     }
+    _expenseCtrl.text = transcript;
     _parseExpenses();
   }
 
   Future<void> _stopListening() async {
     await _speech.stop();
     _recCtrl.stop();
-    if (mounted) setState(() => _isListening = false);
+    _recordingWatch.stop();
+    if (mounted) setState(() { _isListening = false; _recordingSeconds = 0; });
   }
 
   // ── Parse expense text via AI ─────────────────────────────────────────
@@ -624,13 +641,23 @@ class _DashboardScreenState extends State<DashboardScreen>
                       fontSize: 13,
                     ),
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 12),
+                  Text(
+                    '${(_recordingSeconds ~/ 60).toString().padLeft(2, '0')}:${(_recordingSeconds % 60).toString().padLeft(2, '0')}',
+                    style: TextStyle(
+                      color: AppTheme.danger.withValues(alpha: 0.7 + pulse * 0.3),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 2,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
                   // Submit button
                   FilledButton.icon(
                     onPressed: _submitRecording,
                     style: FilledButton.styleFrom(
-                      backgroundColor: AppTheme.success,
-                      foregroundColor: Colors.white,
+                      backgroundColor: Colors.white,
+                      foregroundColor: Colors.black,
                       minimumSize: Size.zero,
                       padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
                       shape: RoundedRectangleBorder(
