@@ -233,7 +233,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Row 1: full-width name + chevron
+                    // Row 1: group name + chevron
                     Row(
                       children: [
                         Expanded(
@@ -245,29 +245,63 @@ class _AccountsScreenState extends State<AccountsScreen> {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis),
                         ),
-                        const SizedBox(width: 8),
                         Icon(
                           isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
                           color: AppTheme.textSecondary, size: 20,
                         ),
                       ],
                     ),
-                    const SizedBox(height: 10),
-                    // Row 2: accounts count (left) + total (right)
+                    const SizedBox(height: 4),
+                    // Row 2: total
+                    Text(
+                      formatCurrency(total.abs(), accounts.isNotEmpty ? accounts.first.currency : 'EGP'),
+                      style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: total < 0 ? AppTheme.danger : AppTheme.success),
+                    ),
+                    const SizedBox(height: 2),
+                    // Row 3: number of accounts (left) + edit/delete (right)
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          '${accounts.length} account${accounts.length == 1 ? '' : 's'}',
-                          style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                        Expanded(
+                          child: Text(
+                            '${accounts.length} account${accounts.length == 1 ? '' : 's'}',
+                            style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary),
+                          ),
                         ),
-                        Text(
-                          formatCurrency(total.abs(), accounts.isNotEmpty ? accounts.first.currency : 'EGP'),
-                          style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                              color: total < 0 ? AppTheme.danger : AppTheme.success),
-                        ),
+                        if (onEdit != null)
+                          GestureDetector(
+                            onTap: onEdit,
+                            child: const Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.edit_outlined, size: 11, color: AppTheme.textSecondary),
+                                  SizedBox(width: 3),
+                                  Text('Edit', style: TextStyle(fontSize: 11, color: AppTheme.textSecondary)),
+                                ],
+                              ),
+                            ),
+                          ),
+                        if (onDelete != null) ...[
+                          const SizedBox(width: 8),
+                          GestureDetector(
+                            onTap: onDelete,
+                            child: const Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.delete_outline, size: 11, color: AppTheme.danger),
+                                  SizedBox(width: 3),
+                                  Text('Delete', style: TextStyle(fontSize: 11, color: AppTheme.danger)),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                     const SizedBox(height: 14),

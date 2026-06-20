@@ -2,6 +2,7 @@ import 'dart:math';
 import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:speech_to_text/speech_to_text.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import '../../core/api/api_client.dart';
 import '../../core/theme/app_theme.dart';
@@ -22,9 +23,15 @@ class _DashboardScreenState extends State<DashboardScreen>
   final _expenseCtrl   = TextEditingController();
   bool _expenseLoading = false;
 
+  // Speech-to-text
+  final _speech        = SpeechToText();
+  bool _isListening    = false;
+  bool _speechAvailable = false;
+
   // Scan animation
   late final AnimationController _scanCtrl;
   late final AnimationController _pulseCtrl;
+  late final AnimationController _recCtrl;
 
   // Monthly stats
   Map<String, dynamic>? _stats;
@@ -55,6 +62,9 @@ class _DashboardScreenState extends State<DashboardScreen>
     _tipMessage = _tips[idx].$2;
     _loadGoals();
     _loadStats();
+    _speech.initialize().then((available) {
+      if (mounted) setState(() => _speechAvailable = available);
+    });
     _scanCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1200),
@@ -62,6 +72,10 @@ class _DashboardScreenState extends State<DashboardScreen>
     _pulseCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
+    );
+    _recCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
     );
   }
 
@@ -71,6 +85,8 @@ class _DashboardScreenState extends State<DashboardScreen>
     _aiCtrl.dispose();
     _scanCtrl.dispose();
     _pulseCtrl.dispose();
+    _recCtrl.dispose();
+    _speech.stop();
     super.dispose();
   }
 
@@ -131,6 +147,41 @@ class _DashboardScreenState extends State<DashboardScreen>
       debugPrint('STATS ERROR: $e');
       if (mounted) setState(() => _stats = {});
     }
+  }
+
+  // ── Voice recording ───────────────────────────────────────────────────
+  String _partialTranscript = '';
+
+  Future<void> _startListening() async {
+    if (!_speechAvailable) return;
+    _partialTranscript = '';
+    _recCtrl.repeat(reverse: true);
+    await _speech.listen(
+      onResult: (result) {
+        _partialTranscript = result.recognizedWords;
+      },
+      listenFor: const Duration(seconds: 300),
+      pauseFor: const Duration(seconds: 300),
+      localeId: 'en_US',
+    );
+    if (mounted) setState(() => _isListening = true);
+  }
+
+  Future<void> _submitRecording() async {
+    await _speech.stop();
+    _recCtrl.stop();
+    if (!mounted) return;
+    setState(() => _isListening = false);
+    if (_partialTranscript.isNotEmpty) {
+      _expenseCtrl.text = _partialTranscript;
+    }
+    _parseExpenses();
+  }
+
+  Future<void> _stopListening() async {
+    await _speech.stop();
+    _recCtrl.stop();
+    if (mounted) setState(() => _isListening = false);
   }
 
   // ── Parse expense text via AI ─────────────────────────────────────────
@@ -488,8 +539,128 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
   }
 
-  List<Widget> _buildCornerBrackets(Size size) {
-    const c = Color(0xFF2B7BE0);
+  Widget _buildRecordingOverlay() {
+    final size = MediaQuery.of(context).size;
+    return AnimatedBuilder(
+      animation: _recCtrl,
+      builder: (_, __) {
+        final pulse = _recCtrl.value;
+        final ringScale = 1.0 + pulse * 0.35;
+        final ringOpacity = (1.0 - pulse) * 0.5;
+        return Stack(
+          children: [
+            // Blurred dark bg
+            BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+              child: Container(color: Colors.black.withValues(alpha: 0.75)),
+            ),
+
+            // Corner brackets in red to match recording theme
+            ..._buildCornerBrackets(size, c: AppTheme.danger),
+
+            // Center content
+            Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Pulsing mic rings + icon
+                  SizedBox(
+                    width: 120,
+                    height: 120,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        // Outer ring
+                        Transform.scale(
+                          scale: ringScale,
+                          child: Container(
+                            width: 100,
+                            height: 100,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: AppTheme.danger.withValues(alpha: ringOpacity),
+                                width: 3,
+                              ),
+                            ),
+                          ),
+                        ),
+                        // Inner filled circle
+                        Container(
+                          width: 72,
+                          height: 72,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: AppTheme.danger.withValues(alpha: 0.15 + pulse * 0.1),
+                            border: Border.all(
+                              color: AppTheme.danger.withValues(alpha: 0.6 + pulse * 0.4),
+                              width: 2,
+                            ),
+                          ),
+                          child: Icon(
+                            Icons.mic_rounded,
+                            color: AppTheme.danger.withValues(alpha: 0.8 + pulse * 0.2),
+                            size: 32,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    'RECORDING',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.7 + pulse * 0.3),
+                      fontSize: 13,
+                      letterSpacing: 5,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Speak your expenses...',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.5),
+                      fontSize: 13,
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  // Submit button
+                  FilledButton.icon(
+                    onPressed: _submitRecording,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppTheme.success,
+                      foregroundColor: Colors.white,
+                      minimumSize: Size.zero,
+                      padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(28)),
+                      textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                    ),
+                    icon: const Icon(Icons.send_rounded, size: 18),
+                    label: const Text('Submit'),
+                  ),
+                  const SizedBox(height: 12),
+                  TextButton(
+                    onPressed: _stopListening,
+                    child: Text(
+                      'Cancel',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.5),
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  List<Widget> _buildCornerBrackets(Size size, {Color c = const Color(0xFF2B7BE0)}) {
     const s = 36.0;
     const t = 2.5;
     const pad = 24.0;
@@ -546,6 +717,7 @@ class _DashboardScreenState extends State<DashboardScreen>
         ),
       ),
         ),
+        if (_isListening) _buildRecordingOverlay(),
         if (_expenseLoading) _buildScanOverlay(),
       ],
     );
@@ -645,28 +817,45 @@ class _DashboardScreenState extends State<DashboardScreen>
             ),
           ),
           const SizedBox(height: 10),
-          Align(
-            alignment: Alignment.centerRight,
-            child: FilledButton.icon(
-              onPressed: _expenseLoading ? null : _parseExpenses,
-              style: FilledButton.styleFrom(
-                minimumSize: Size.zero,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20)),
-                textStyle:
-                    const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              IconButton.filled(
+                onPressed: _expenseLoading ? null : _startListening,
+                style: IconButton.styleFrom(
+                  backgroundColor: AppTheme.primary.withValues(alpha: 0.15),
+                  foregroundColor: AppTheme.primary,
+                  minimumSize: Size.zero,
+                  padding: const EdgeInsets.all(10),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                icon: const Icon(Icons.mic_rounded, size: 18),
+                tooltip: 'Record expense',
               ),
-              icon: _expenseLoading
-                  ? const SizedBox(
-                      width: 14, height: 14,
-                      child: CircularProgressIndicator(
-                          strokeWidth: 2, color: Colors.white))
-                  : const Icon(Icons.auto_awesome, size: 16),
-              label: Text(_expenseLoading ? 'Parsing...' : 'Parse & Review'),
-            ),
+              const SizedBox(width: 8),
+              FilledButton.icon(
+                onPressed: _expenseLoading ? null : _parseExpenses,
+                style: FilledButton.styleFrom(
+                  minimumSize: Size.zero,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20)),
+                  textStyle: const TextStyle(
+                      fontSize: 13, fontWeight: FontWeight.w600),
+                ),
+                icon: _expenseLoading
+                    ? const SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: Colors.white))
+                    : const Icon(Icons.auto_awesome, size: 16),
+                label:
+                    Text(_expenseLoading ? 'Parsing...' : 'Parse & Review'),
+              ),
+            ],
           ),
         ],
       ),
