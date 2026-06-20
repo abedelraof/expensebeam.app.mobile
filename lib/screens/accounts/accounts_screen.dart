@@ -380,19 +380,11 @@ class _AccountsScreenState extends State<AccountsScreen> {
                           color: AppTheme.primary),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis),
-                  Text(acc.currency,
+                  Text(formatCurrency(acc.displayBalance, acc.currency),
                       style: const TextStyle(
                           fontSize: 11, color: AppTheme.textSecondary)),
                 ],
               ),
-            ),
-            // Balance
-            Text(
-              formatCurrency(acc.displayBalance, acc.currency),
-              style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold,
-                  color: acc.isLiability ? AppTheme.danger : AppTheme.primary),
             ),
             // Edit
             IconButton(
@@ -504,15 +496,34 @@ class _AccountsScreenState extends State<AccountsScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete account?'),
-        content: Text('Remove "${acc.name}" permanently?'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-          FilledButton(
-              style: FilledButton.styleFrom(backgroundColor: AppTheme.danger),
-              onPressed: () { Navigator.pop(ctx); _deleteAccount(acc); },
-              child: const Text('Delete')),
-        ],
+        title: const Text('Delete account?', style: TextStyle(fontSize: 15)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Remove "${acc.name}" permanently?'),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(
+                  child: FilledButton(
+                    style: FilledButton.styleFrom(backgroundColor: AppTheme.textSecondary.withValues(alpha: 0.15), foregroundColor: AppTheme.textSecondary),
+                    onPressed: () => Navigator.pop(ctx),
+                    child: const Text('Cancel'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: FilledButton(
+                    style: FilledButton.styleFrom(backgroundColor: AppTheme.danger),
+                    onPressed: () { Navigator.pop(ctx); _deleteAccount(acc); },
+                    child: const Text('Delete'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -521,15 +532,34 @@ class _AccountsScreenState extends State<AccountsScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Delete "${g.name}"?'),
-        content: const Text('This will delete the group. Accounts inside will become ungrouped.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-          FilledButton(
-              style: FilledButton.styleFrom(backgroundColor: AppTheme.danger),
-              onPressed: () { Navigator.pop(ctx); _deleteGroup(g); },
-              child: const Text('Delete')),
-        ],
+        title: Text('Delete "${g.name}"?', style: const TextStyle(fontSize: 15)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('This will delete the group. Accounts inside will become ungrouped.'),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(
+                  child: FilledButton(
+                    style: FilledButton.styleFrom(backgroundColor: AppTheme.textSecondary.withValues(alpha: 0.15), foregroundColor: AppTheme.textSecondary),
+                    onPressed: () => Navigator.pop(ctx),
+                    child: const Text('Cancel'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: FilledButton(
+                    style: FilledButton.styleFrom(backgroundColor: AppTheme.danger),
+                    onPressed: () { Navigator.pop(ctx); _deleteGroup(g); },
+                    child: const Text('Delete'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
