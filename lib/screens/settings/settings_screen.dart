@@ -3,12 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:file_picker/file_picker.dart';
 import '../../core/api/api_client.dart';
 import '../../core/providers/auth_provider.dart';
-import '../../core/providers/theme_provider.dart';
-import '../income/income_screen.dart';
-import '../goals/goals_screen.dart';
-import '../recurring/recurring_screen.dart';
+import '../../core/theme/app_theme.dart';
 import 'categories_screen.dart';
-import 'budgets_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -20,7 +16,12 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _loading = true;
   final _apiKeyCtrl = TextEditingController();
-  final _currencyCtrl = TextEditingController();
+  String _selectedCurrency = 'EGP';
+
+  static const _currencies = [
+    'EGP', 'USD', 'EUR', 'GBP', 'SAR', 'AED', 'JOD', 'KWD', 'QAR', 'BHD',
+    'TRY', 'CAD', 'AUD', 'CHF', 'CNY', 'JPY', 'INR',
+  ];
 
   @override
   void initState() {
@@ -31,7 +32,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void dispose() {
     _apiKeyCtrl.dispose();
-    _currencyCtrl.dispose();
     super.dispose();
   }
 
@@ -42,7 +42,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final data = res.data is Map
           ? Map<String, dynamic>.from(res.data)
           : <String, dynamic>{};
-      _currencyCtrl.text = data['currency'] ?? 'EGP';
+      final c = data['currency'] ?? 'EGP';
+      _selectedCurrency = _currencies.contains(c) ? c : 'EGP';
       _apiKeyCtrl.text = data['claudeApiKey'] ?? '';
     } catch (_) {}
     setState(() => _loading = false);
@@ -51,7 +52,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _saveSettings() async {
     try {
       await ApiClient.put('/settings', data: {
-        'currency': _currencyCtrl.text.trim().toUpperCase(),
+        'currency': _selectedCurrency,
         'claudeApiKey': _apiKeyCtrl.text.trim(),
       });
       if (mounted) {
@@ -89,7 +90,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final themeProvider = context.watch<ThemeProvider>();
     final auth = context.read<AuthProvider>();
 
     return Scaffold(
@@ -99,41 +99,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
               padding: const EdgeInsets.all(16),
               children: [
                 _section('Profile', [
-                  TextFormField(
-                    controller: _currencyCtrl,
+                  DropdownButtonFormField<String>(
+                    value: _selectedCurrency,
                     decoration: const InputDecoration(
                       labelText: 'Home Currency',
                       prefixIcon: Icon(Icons.currency_exchange),
                     ),
+                    items: _currencies
+                        .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                        .toList(),
+                    onChanged: (v) => setState(() => _selectedCurrency = v!),
                   ),
                   const SizedBox(height: 12),
                   FilledButton(
                       onPressed: _saveSettings,
                       child: const Text('Save Profile')),
-                ]),
-                const SizedBox(height: 16),
-                _section('Theme', [
-                  RadioListTile<ThemeMode>(
-                    contentPadding: EdgeInsets.zero,
-                    title: const Text('System default'),
-                    value: ThemeMode.system,
-                    groupValue: themeProvider.mode,
-                    onChanged: (v) => themeProvider.setMode(v!),
-                  ),
-                  RadioListTile<ThemeMode>(
-                    contentPadding: EdgeInsets.zero,
-                    title: const Text('Light'),
-                    value: ThemeMode.light,
-                    groupValue: themeProvider.mode,
-                    onChanged: (v) => themeProvider.setMode(v!),
-                  ),
-                  RadioListTile<ThemeMode>(
-                    contentPadding: EdgeInsets.zero,
-                    title: const Text('Dark'),
-                    value: ThemeMode.dark,
-                    groupValue: themeProvider.mode,
-                    onChanged: (v) => themeProvider.setMode(v!),
-                  ),
                 ]),
                 const SizedBox(height: 16),
                 _section('AI', [
@@ -153,16 +133,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ]),
                 const SizedBox(height: 16),
                 _section('More', [
-                  _navTile('Income', Icons.attach_money, () =>
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => const IncomeScreen()))),
-                  _navTile('Savings Goals', Icons.savings, () =>
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => const GoalsScreen()))),
-                  _navTile('Recurring Expenses', Icons.repeat, () =>
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => const RecurringScreen()))),
                   _navTile('Categories', Icons.category, () =>
                       Navigator.push(context, MaterialPageRoute(builder: (_) => const CategoriesScreen()))),
-                  _navTile('Budgets', Icons.pie_chart, () =>
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => const BudgetsScreen()))),
                 ]),
                 const SizedBox(height: 16),
                 _section('Data', [
@@ -190,12 +162,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         builder: (ctx) => AlertDialog(
                           title: const Text('Sign out?'),
                           actions: [
-                            TextButton(
-                                onPressed: () => Navigator.pop(ctx, false),
-                                child: const Text('Cancel')),
-                            FilledButton(
-                                onPressed: () => Navigator.pop(ctx, true),
-                                child: const Text('Sign Out')),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: FilledButton(
+                                    style: FilledButton.styleFrom(
+                                        backgroundColor: AppTheme.textSecondary.withValues(alpha: 0.15),
+                                        foregroundColor: AppTheme.textSecondary),
+                                    onPressed: () => Navigator.pop(ctx, false),
+                                    child: const Text('Cancel'),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: FilledButton(
+                                    onPressed: () => Navigator.pop(ctx, true),
+                                    child: const Text('Ok'),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ],
                         ),
                       );

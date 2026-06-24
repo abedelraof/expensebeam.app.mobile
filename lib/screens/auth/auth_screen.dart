@@ -799,7 +799,8 @@ class _AuthScreenState extends State<AuthScreen>
         key: const ValueKey('login'),
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Social buttons — first
+          // ignore: dead_code
+          if (false) ...[
           Row(children: [
             Expanded(child: _socialBtn('Google')),
             const SizedBox(width: 12),
@@ -817,6 +818,7 @@ class _AuthScreenState extends State<AuthScreen>
             const Expanded(child: Divider(color: _dividerColor)),
           ]),
           const SizedBox(height: 20),
+          ], // end hidden social section
           // Fields
           TextFormField(
             controller: _loginEmailCtrl,
@@ -920,7 +922,8 @@ class _AuthScreenState extends State<AuthScreen>
         key: const ValueKey('reg'),
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Social buttons — first
+          // ignore: dead_code
+          if (false) ...[
           Row(children: [
             Expanded(child: _socialBtn('Google')),
             const SizedBox(width: 12),
@@ -939,6 +942,7 @@ class _AuthScreenState extends State<AuthScreen>
             const Expanded(child: Divider(color: _dividerColor)),
           ]),
           const SizedBox(height: 20),
+          ], // end hidden social section
           // Full Name
           TextFormField(
             controller: _regNameCtrl,

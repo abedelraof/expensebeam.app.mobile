@@ -4,6 +4,7 @@ import 'core/providers/auth_provider.dart';
 import 'core/providers/theme_provider.dart';
 import 'core/theme/app_theme.dart';
 import 'screens/auth/auth_screen.dart';
+import 'screens/auth/splash_screen.dart';
 import 'screens/main_shell.dart';
 
 void main() {
@@ -45,7 +46,11 @@ class _ExpenseBeamAppState extends State<ExpenseBeamApp> {
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       themeMode: themeProvider.mode,
-      home: auth.isAuthenticated ? MainShell(key: MainShell.shellKey) : const AuthScreen(),
+      home: auth.isChecking
+          ? const SplashScreen()
+          : auth.isAuthenticated
+              ? MainShell(key: MainShell.shellKey)
+              : const AuthScreen(),
     );
   }
 }

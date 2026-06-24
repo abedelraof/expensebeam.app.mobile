@@ -6,6 +6,7 @@ import 'dashboard/dashboard_screen.dart';
 import 'transactions/transactions_screen.dart';
 import 'recurring/recurring_screen.dart';
 import 'income/income_screen.dart';
+import 'planning/planning_screen.dart';
 import 'reports/reports_screen.dart';
 import 'accounts/accounts_screen.dart';
 import 'settings/settings_screen.dart';
@@ -32,6 +33,7 @@ class _MainShellState extends State<MainShell> {
     TransactionsScreen(),
     RecurringScreen(),
     IncomeScreen(),
+    PlanningScreen(),
     ReportsScreen(),
     AccountsScreen(),
     SettingsScreen(),
@@ -42,6 +44,7 @@ class _MainShellState extends State<MainShell> {
     (label: 'Transactions', icon: Icons.list_alt_outlined,                filled: Icons.list_alt),
     (label: 'Recurring',    icon: Icons.repeat_outlined,                  filled: Icons.repeat),
     (label: 'Income',       icon: Icons.savings_outlined,                 filled: Icons.savings),
+    (label: 'Planning',     icon: Icons.flag_outlined,                    filled: Icons.flag),
     (label: 'Reports',      icon: Icons.bar_chart_outlined,               filled: Icons.bar_chart),
     (label: 'Accounts',     icon: Icons.account_balance_wallet_outlined,  filled: Icons.account_balance_wallet),
     (label: 'Settings',     icon: Icons.settings_outlined,                filled: Icons.settings),
@@ -244,12 +247,26 @@ class _MainShellState extends State<MainShell> {
                           builder: (ctx) => AlertDialog(
                             title: const Text('Sign out?'),
                             actions: [
-                              TextButton(
-                                  onPressed: () => Navigator.pop(ctx, false),
-                                  child: const Text('Cancel')),
-                              FilledButton(
-                                  onPressed: () => Navigator.pop(ctx, true),
-                                  child: const Text('Sign Out')),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: FilledButton(
+                                      style: FilledButton.styleFrom(
+                                          backgroundColor: AppTheme.textSecondary.withValues(alpha: 0.15),
+                                          foregroundColor: AppTheme.textSecondary),
+                                      onPressed: () => Navigator.pop(ctx, false),
+                                      child: const Text('Cancel'),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: FilledButton(
+                                      onPressed: () => Navigator.pop(ctx, true),
+                                      child: const Text('Ok'),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ],
                           ),
                         );

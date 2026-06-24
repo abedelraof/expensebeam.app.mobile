@@ -305,6 +305,8 @@ class _SignupScreenState extends State<SignupScreen> {
                               ),
                               const SizedBox(height: 20),
 
+                              // ignore: dead_code
+                              if (false) ...[
                               // Divider
                               Row(
                                 children: [
@@ -362,6 +364,7 @@ class _SignupScreenState extends State<SignupScreen> {
                                 ],
                               ),
                               const SizedBox(height: 14),
+                              ], // end hidden social section
 
                               // Sign in link
                               TextButton(

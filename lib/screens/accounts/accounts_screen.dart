@@ -437,40 +437,59 @@ class _AccountsScreenState extends State<AccountsScreen> {
           ),
         ],
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          // Row 1: Net Worth
+          Text('Net Worth',
+              style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.7),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500)),
+          const SizedBox(height: 6),
+          Text(
+            formatCurrency(_netWorth.abs(), 'EGP'),
+            style: const TextStyle(
+                color: Colors.white,
+                fontSize: 26,
+                fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 16),
+          // Row 2: Assets | Liabilities
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text('Net Worth',
-                    style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.7),
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500)),
-                const SizedBox(height: 6),
-                Text(
-                  formatCurrency(_netWorth.abs(), 'EGP'),
-                  style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 26,
-                      fontWeight: FontWeight.bold),
-                ),
+                Expanded(child: _statCard('Assets', assets, AppTheme.success)),
+                const SizedBox(width: 12),
+                Expanded(child: _statCard('Liabilities', liabilities, AppTheme.danger)),
               ],
             ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              _statPill('Assets', assets, AppTheme.success),
-              const SizedBox(height: 6),
-              _statPill('Liabilities', liabilities, AppTheme.danger),
-            ],
           ),
         ],
       ),
     );
   }
+
+  Widget _statCard(String label, double amount, Color color) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label,
+                style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.7), fontSize: 11)),
+            const SizedBox(height: 4),
+            Text(formatAmount(amount),
+                style: TextStyle(
+                    color: color, fontSize: 14, fontWeight: FontWeight.bold)),
+          ],
+        ),
+      );
 
   Widget _statPill(String label, double amount, Color color) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),

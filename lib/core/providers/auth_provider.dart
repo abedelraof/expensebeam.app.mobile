@@ -3,16 +3,22 @@ import '../api/api_client.dart';
 
 class AuthProvider extends ChangeNotifier {
   bool _isAuthenticated = false;
+  bool _isChecking = true;
   bool _isLoading = false;
   String? _error;
 
   bool get isAuthenticated => _isAuthenticated;
+  bool get isChecking => _isChecking;
   bool get isLoading => _isLoading;
   String? get error => _error;
 
   Future<void> checkAuth() async {
-    final token = await ApiClient.getToken();
-    _isAuthenticated = token != null;
+    final results = await Future.wait([
+      ApiClient.getToken(),
+      Future.delayed(const Duration(seconds: 2)),
+    ]);
+    _isAuthenticated = results[0] != null;
+    _isChecking = false;
     notifyListeners();
   }
 
