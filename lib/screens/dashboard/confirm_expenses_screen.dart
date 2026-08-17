@@ -35,7 +35,9 @@ class _ConfirmExpensesScreenState extends State<ConfirmExpensesScreen> {
 
   @override
   void dispose() {
-    for (final f in _forms) f.dispose();
+    for (final f in _forms) {
+      f.dispose();
+    }
     super.dispose();
   }
 

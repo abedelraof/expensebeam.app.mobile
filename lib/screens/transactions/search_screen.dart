@@ -69,8 +69,9 @@ class _SearchScreenState extends State<SearchScreen>
       final res  = await ApiClient.get('/categories');
       final data = res.data;
       List<dynamic> list = [];
-      if (data is List) list = data;
-      else if (data is Map) {
+      if (data is List) {
+        list = data;
+      } else if (data is Map) {
         for (final key in ['categories', 'data', 'items']) {
           if (data[key] is List) { list = data[key]; break; }
         }

@@ -16,17 +16,17 @@ import 'settings/settings_screen.dart';
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
 
-  static final GlobalKey<_MainShellState> shellKey = GlobalKey<_MainShellState>();
+  static final GlobalKey<MainShellState> shellKey = GlobalKey<MainShellState>();
 
   static void goToDashboard() {
     shellKey.currentState?._navigate(0);
   }
 
   @override
-  State<MainShell> createState() => _MainShellState();
+  State<MainShell> createState() => MainShellState();
 }
 
-class _MainShellState extends State<MainShell> {
+class MainShellState extends State<MainShell> {
   int _index = 0;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 

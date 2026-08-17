@@ -38,8 +38,9 @@ class _AccountsScreenState extends State<AccountsScreen> {
       // Parse accounts
       final aData = results[0].data;
       List<dynamic> aList = [];
-      if (aData is List) aList = aData;
-      else if (aData is Map) {
+      if (aData is List) {
+        aList = aData;
+      } else if (aData is Map) {
         for (final k in ['accounts', 'data', 'items']) {
           if (aData[k] is List) { aList = aData[k]; break; }
         }
@@ -53,8 +54,9 @@ class _AccountsScreenState extends State<AccountsScreen> {
       // Parse groups
       final gData = results[1].data;
       List<dynamic> gList = [];
-      if (gData is List) gList = gData;
-      else if (gData is Map) {
+      if (gData is List) {
+        gList = gData;
+      } else if (gData is Map) {
         for (final k in ['groups', 'account_groups', 'data', 'items']) {
           if (gData[k] is List) { gList = gData[k]; break; }
         }
@@ -96,8 +98,10 @@ class _AccountsScreenState extends State<AccountsScreen> {
       await ApiClient.delete('/accounts/${a.id}');
       _load();
     } catch (_) {
-      if (mounted) ScaffoldMessenger.of(context)
+      if (mounted) {
+        ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text('Could not delete account')));
+      }
     }
   }
 
@@ -106,8 +110,10 @@ class _AccountsScreenState extends State<AccountsScreen> {
       await ApiClient.delete('/account-groups/${g.id}');
       _load();
     } catch (_) {
-      if (mounted) ScaffoldMessenger.of(context)
+      if (mounted) {
+        ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text('Could not delete group')));
+      }
     }
   }
 
@@ -159,8 +165,11 @@ class _AccountsScreenState extends State<AccountsScreen> {
                       total: total,
                       isExpanded: isExpanded,
                       onToggle: () => setState(() {
-                        if (isExpanded) _expandedGroups.remove(g.id);
-                        else _expandedGroups.add(g.id);
+                        if (isExpanded) {
+                          _expandedGroups.remove(g.id);
+                        } else {
+                          _expandedGroups.add(g.id);
+                        }
                       }),
                       onEdit: () async {
                         await Navigator.push(context,
@@ -600,8 +609,10 @@ class _EditGroupScreenState extends State<EditGroupScreen> {
       }
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context)
+      if (mounted) {
+        ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text('Error: $e')));
+      }
     }
     setState(() => _saving = false);
   }

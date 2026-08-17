@@ -1,6 +1,5 @@
 import 'dart:math';
 import 'dart:ui';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:speech_to_text/speech_to_text.dart';
@@ -107,12 +106,14 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   // ── Load goals ────────────────────────────────────────────────────────
   Future<void> _loadGoals() async {
-    if (mounted) setState(() {
+    if (mounted) {
+      setState(() {
       _goalsLoading = true;
       final idx = Random().nextInt(_tips.length);
       _tipTitle   = _tips[idx].$1;
       _tipMessage = _tips[idx].$2;
     });
+    }
     try {
       final res = await ApiClient.get('/goals');
       final data = res.data;
@@ -177,10 +178,12 @@ class _DashboardScreenState extends State<DashboardScreen>
       onResult: (result) {
         _partialTranscript = result.recognizedWords;
       },
-      listenFor: const Duration(seconds: 300),
-      pauseFor: const Duration(seconds: 300),
-      localeId: 'en_US',
-      partialResults: true,
+      listenOptions: SpeechListenOptions(
+        listenFor: const Duration(seconds: 300),
+        pauseFor: const Duration(seconds: 300),
+        localeId: 'en_US',
+        partialResults: true,
+      ),
     );
   }
 
@@ -1184,8 +1187,11 @@ class _DashboardScreenState extends State<DashboardScreen>
     Color quotaColor = AppTheme.success;
     if (sub.aiLimit > 0) {
       final pct = sub.aiUsed / sub.aiLimit;
-      if (pct >= 1.0) quotaColor = AppTheme.danger;
-      else if (pct >= 0.8) quotaColor = AppTheme.warning;
+      if (pct >= 1.0) {
+        quotaColor = AppTheme.danger;
+      } else if (pct >= 0.8) {
+        quotaColor = AppTheme.warning;
+      }
     }
 
     return _Section(

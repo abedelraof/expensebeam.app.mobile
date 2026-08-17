@@ -20,7 +20,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   int _page = 1;
   bool _hasMore = true;
   final _searchCtrl = TextEditingController();
-  String _sort = 'date_desc';
+  final String _sort = 'date_desc';
   DateTimeRange? _dateRange;
   final _scrollCtrl = ScrollController();
   String? _highlightedId;
