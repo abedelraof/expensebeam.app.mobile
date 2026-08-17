@@ -3,7 +3,6 @@ import 'package:intl/intl.dart';
 import '../../core/api/api_client.dart';
 import '../../core/models/expense.dart';
 import '../../core/theme/app_theme.dart';
-import '../../core/utils/formatters.dart';
 import '../../widgets/expense_tile.dart';
 import 'edit_expense_screen.dart';
 

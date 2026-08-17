@@ -99,19 +99,6 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     setState(() => _loading = false);
   }
 
-  Future<void> _pickDateRange() async {
-    final range = await showDateRangePicker(
-      context: context,
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now(),
-      initialDateRange: _dateRange,
-    );
-    if (range != null) {
-      _dateRange = range;
-      _load(reset: true);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -258,55 +245,4 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     });
   }
 
-  void _showFilterSheet() {
-    showModalBottomSheet(
-      context: context,
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text('Filter & Sort',
-                style: Theme.of(ctx).textTheme.titleLarge),
-            const SizedBox(height: 16),
-            DropdownButtonFormField<String>(
-              value: _sort,
-              decoration: const InputDecoration(labelText: 'Sort by'),
-              items: const [
-                DropdownMenuItem(
-                    value: 'date_desc', child: Text('Date (Newest)')),
-                DropdownMenuItem(
-                    value: 'date_asc', child: Text('Date (Oldest)')),
-                DropdownMenuItem(
-                    value: 'amount_desc', child: Text('Amount (High)')),
-                DropdownMenuItem(
-                    value: 'amount_asc', child: Text('Amount (Low)')),
-              ],
-              onChanged: (v) => setState(() => _sort = v!),
-            ),
-            const SizedBox(height: 12),
-            OutlinedButton.icon(
-              icon: const Icon(Icons.calendar_today),
-              label: Text(_dateRange == null
-                  ? 'Pick Date Range'
-                  : '${DateFormat('MMM d').format(_dateRange!.start)} – ${DateFormat('MMM d').format(_dateRange!.end)}'),
-              onPressed: () {
-                Navigator.pop(ctx);
-                _pickDateRange();
-              },
-            ),
-            const SizedBox(height: 12),
-            FilledButton(
-              onPressed: () {
-                Navigator.pop(ctx);
-                _load(reset: true);
-              },
-              child: const Text('Apply'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }

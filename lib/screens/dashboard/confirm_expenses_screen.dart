@@ -301,7 +301,6 @@ class _ExpenseCard extends StatefulWidget {
 
 class _ExpenseCardState extends State<_ExpenseCard> {
   bool _expanded = false;
-  static const _currencies = ['EGP', 'USD', 'EUR', 'GBP', 'SAR', 'AED'];
 
   _Category? get _selectedCategory {
     if (widget.form.category == null) return null;

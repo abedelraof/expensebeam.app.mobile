@@ -491,26 +491,6 @@ class _AccountsScreenState extends State<AccountsScreen> {
         ),
       );
 
-  Widget _statPill(String label, double amount, Color color) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.2),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(label,
-                style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.7), fontSize: 10)),
-            const SizedBox(width: 6),
-            Text(formatCurrency(amount, 'EGP'),
-                style: TextStyle(
-                    color: color, fontSize: 12, fontWeight: FontWeight.bold)),
-          ],
-        ),
-      );
-
   void _confirmDeleteAccount(Account acc) {
     showDialog(
       context: context,
