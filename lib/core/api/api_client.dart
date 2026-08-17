@@ -5,6 +5,11 @@ class ApiClient {
   static const String _baseUrl = 'https://expensebeam.com/api';
   static final _storage = FlutterSecureStorage();
 
+  /// Called when the server rejects our token. AuthProvider registers itself
+  /// here so a 401 anywhere in the app drops the user back to the login screen
+  /// instead of leaving every screen showing "failed to load".
+  static void Function()? onUnauthorized;
+
   static Dio get _dio {
     final dio = Dio(BaseOptions(
       baseUrl: _baseUrl,
@@ -18,6 +23,13 @@ class ApiClient {
           options.headers['Authorization'] = 'Bearer $token';
         }
         handler.next(options);
+      },
+      onError: (e, handler) async {
+        if (e.response?.statusCode == 401) {
+          await clearToken();
+          onUnauthorized?.call();
+        }
+        handler.next(e);
       },
     ));
     return dio;

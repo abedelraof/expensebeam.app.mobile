@@ -2,12 +2,16 @@ import 'dart:math';
 import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import '../../core/api/api_client.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/models/goal.dart';
+import '../../core/providers/subscription_provider.dart';
 import '../../core/utils/formatters.dart';
+import '../../widgets/upgrade_sheet.dart';
+import '../transactions/edit_expense_screen.dart';
 import 'confirm_expenses_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -47,6 +51,9 @@ class _DashboardScreenState extends State<DashboardScreen>
   bool _aiLoading = false;
   String? _aiAnswer;
   String? _aiQuestion;
+
+  // Pro overlay for quick expense section
+  bool _showProOverlay = false;
 
   static const _suggested = [
     'How much did I spend this month?',
@@ -285,6 +292,7 @@ class _DashboardScreenState extends State<DashboardScreen>
               res.data['message'] ??
               res.data.toString();
         });
+        context.read<SubscriptionProvider>().refresh();
       }
     } catch (_) {
       if (mounted) {
@@ -717,6 +725,7 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   @override
   Widget build(BuildContext context) {
+    final sub = context.watch<SubscriptionProvider>();
     return Stack(
       children: [
         Scaffold(
@@ -730,7 +739,7 @@ class _DashboardScreenState extends State<DashboardScreen>
           children: [
             _buildTipBanner(),
             const SizedBox(height: 24),
-            _buildQuickExpense(),
+            _buildQuickExpense(sub),
             const SizedBox(height: 24),
             _buildMonthlyStats(),
             if (_goalsLoading || _goals.isNotEmpty) ...[
@@ -738,7 +747,7 @@ class _DashboardScreenState extends State<DashboardScreen>
               _buildGoals(),
             ],
             const SizedBox(height: 28),
-            _buildAskAI(),
+            _buildAskAI(sub),
           ],
         ),
         ),
@@ -821,71 +830,180 @@ class _DashboardScreenState extends State<DashboardScreen>
   }
 
   // ── Section: Quick Expense ────────────────────────────────────────────
-  Widget _buildQuickExpense() {
-    return _Section(
+  Widget _buildQuickExpense(SubscriptionProvider sub) {
+    // The actual AI section — always rendered the same way
+    final aiContent = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        TextField(
+          controller: _expenseCtrl,
+          maxLines: 4,
+          minLines: 4,
+          autofocus: false,
+          enabled: sub.isPro,
+          textInputAction: TextInputAction.newline,
+          decoration: InputDecoration(
+            hintText:
+                'e.g. "Coffee 45 EGP, lunch with team 320, Uber to airport 150 EGP"',
+            hintStyle: TextStyle(
+                color: AppTheme.textSecondary.withValues(alpha: 0.7),
+                fontSize: 13),
+            alignLabelWithHint: true,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            IconButton.filled(
+              onPressed: _expenseLoading
+                  ? null
+                  : sub.isPro
+                      ? _startListening
+                      : () => setState(() => _showProOverlay = true),
+              style: IconButton.styleFrom(
+                backgroundColor: AppTheme.primary.withValues(alpha: 0.15),
+                foregroundColor: AppTheme.primary,
+                minimumSize: Size.zero,
+                padding: const EdgeInsets.all(10),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              icon: const Icon(Icons.mic_rounded, size: 18),
+              tooltip: 'Record expense',
+            ),
+            const SizedBox(width: 8),
+            FilledButton.icon(
+              onPressed: _expenseLoading
+                  ? null
+                  : sub.isPro
+                      ? _parseExpenses
+                      : () => setState(() => _showProOverlay = true),
+              style: FilledButton.styleFrom(
+                minimumSize: Size.zero,
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 16, vertical: 10),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20)),
+                textStyle: const TextStyle(
+                    fontSize: 13, fontWeight: FontWeight.w600),
+              ),
+              icon: _expenseLoading
+                  ? const SizedBox(
+                      width: 14, height: 14,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white))
+                  : const Icon(Icons.auto_awesome, size: 16),
+              label: Text(_expenseLoading ? 'Parsing...' : 'Parse & Review'),
+            ),
+          ],
+        ),
+      ],
+    );
+
+    final section = _Section(
       title: 'Log an Expense',
       subtitle: 'Describe your expenses in plain language — AI will handle the rest.',
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          TextField(
-            controller: _expenseCtrl,
-            maxLines: 4,
-            minLines: 4,
-            autofocus: false,
-            textInputAction: TextInputAction.newline,
-            decoration: InputDecoration(
-              hintText:
-                  'e.g. "Coffee 45 EGP, lunch with team 320, Uber to airport 150 EGP"',
-              hintStyle: TextStyle(
-                  color: AppTheme.textSecondary.withValues(alpha: 0.7),
-                  fontSize: 13),
-              alignLabelWithHint: true,
+      child: aiContent,
+    );
+
+    if (sub.isPro) return section;
+
+    return Stack(
+      children: [
+        section,
+        if (_showProOverlay)
+          Positioned.fill(
+            child: GestureDetector(
+              onTap: () => setState(() => _showProOverlay = false),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.75),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.workspace_premium_rounded,
+                            color: AppTheme.accent, size: 28),
+                        const SizedBox(height: 10),
+                        const Text(
+                          'AI Expense Parsing is a Pro feature',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.primary,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            FilledButton.icon(
+                              onPressed: () {
+                                setState(() => _showProOverlay = false);
+                                UpgradeSheet.show(
+                                  context,
+                                  featureName: 'AI Expense Parsing',
+                                  featureDescription:
+                                      'Describe expenses in plain language and AI will convert them into structured entries instantly.',
+                                );
+                              },
+                              style: FilledButton.styleFrom(
+                                backgroundColor: AppTheme.accent,
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 14, vertical: 10),
+                                minimumSize: Size.zero,
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(20)),
+                                textStyle: const TextStyle(
+                                    fontSize: 12, fontWeight: FontWeight.bold),
+                              ),
+                              icon: const Icon(Icons.workspace_premium_rounded,
+                                  size: 14),
+                              label: const Text('Upgrade to Pro'),
+                            ),
+                            const SizedBox(width: 10),
+                            OutlinedButton.icon(
+                              onPressed: () {
+                                setState(() => _showProOverlay = false);
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (_) => const EditExpenseScreen()),
+                                );
+                              },
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: AppTheme.primary,
+                                side: const BorderSide(
+                                    color: AppTheme.primary, width: 1.5),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 14, vertical: 10),
+                                minimumSize: Size.zero,
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(20)),
+                                textStyle: const TextStyle(
+                                    fontSize: 12, fontWeight: FontWeight.bold),
+                              ),
+                              icon: const Icon(Icons.edit_outlined, size: 14),
+                              label: const Text('Add Manual'),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
             ),
           ),
-          const SizedBox(height: 10),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              IconButton.filled(
-                onPressed: _expenseLoading ? null : _startListening,
-                style: IconButton.styleFrom(
-                  backgroundColor: AppTheme.primary.withValues(alpha: 0.15),
-                  foregroundColor: AppTheme.primary,
-                  minimumSize: Size.zero,
-                  padding: const EdgeInsets.all(10),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                icon: const Icon(Icons.mic_rounded, size: 18),
-                tooltip: 'Record expense',
-              ),
-              const SizedBox(width: 8),
-              FilledButton.icon(
-                onPressed: _expenseLoading ? null : _parseExpenses,
-                style: FilledButton.styleFrom(
-                  minimumSize: Size.zero,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20)),
-                  textStyle: const TextStyle(
-                      fontSize: 13, fontWeight: FontWeight.w600),
-                ),
-                icon: _expenseLoading
-                    ? const SizedBox(
-                        width: 14,
-                        height: 14,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2, color: Colors.white))
-                    : const Icon(Icons.auto_awesome, size: 16),
-                label:
-                    Text(_expenseLoading ? 'Parsing...' : 'Parse & Review'),
-              ),
-            ],
-          ),
-        ],
-      ),
+      ],
     );
   }
 
@@ -1059,20 +1177,79 @@ class _DashboardScreenState extends State<DashboardScreen>
   }
 
   // ── Section: Ask AI ───────────────────────────────────────────────────
-  Widget _buildAskAI() {
+  Widget _buildAskAI(SubscriptionProvider sub) {
+    final canAsk = sub.isPro && !sub.isAiFull;
+
+    // Quota chip color for Pro users
+    Color quotaColor = AppTheme.success;
+    if (sub.aiLimit > 0) {
+      final pct = sub.aiUsed / sub.aiLimit;
+      if (pct >= 1.0) quotaColor = AppTheme.danger;
+      else if (pct >= 0.8) quotaColor = AppTheme.warning;
+    }
+
     return _Section(
       title: 'Ask About Your Finances',
       subtitle: 'Ask anything — your spending, savings, trends, or advice.',
+      trailing: !sub.isPro
+          ? _proBadge()
+          : sub.isPro && sub.aiLimit > 0
+              ? Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: quotaColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: quotaColor.withValues(alpha: 0.3)),
+                  ),
+                  child: Text(
+                    '${sub.aiUsed} / ${sub.aiLimit} AI',
+                    style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: quotaColor),
+                  ),
+                )
+              : null,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          if (sub.isPro && sub.isAiFull)
+            Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: AppTheme.warning.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppTheme.warning.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.info_outline_rounded,
+                      size: 16, color: AppTheme.warning),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      sub.resetDate.isNotEmpty
+                          ? 'Monthly quota reached — resets on ${sub.resetDate}'
+                          : 'Monthly AI quota reached. Resets next month.',
+                      style: const TextStyle(
+                          fontSize: 12, color: AppTheme.warning),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           TextField(
             controller: _aiCtrl,
             maxLines: 3,
             minLines: 2,
+            enabled: canAsk,
             decoration: InputDecoration(
-              hintText:
-                  'e.g. "Where am I overspending?" or "How much can I save this month?"',
+              hintText: sub.isPro
+                  ? (sub.isAiFull
+                      ? 'Monthly quota reached'
+                      : 'e.g. "Where am I overspending?" or "How much can I save this month?"')
+                  : 'Upgrade to Pro to chat with AI',
               hintStyle: TextStyle(
                   color: AppTheme.textSecondary.withValues(alpha: 0.7),
                   fontSize: 13),
@@ -1083,9 +1260,21 @@ class _DashboardScreenState extends State<DashboardScreen>
           Align(
             alignment: Alignment.centerRight,
             child: FilledButton.icon(
-              onPressed:
-                  _aiLoading ? null : () => _askAI(_aiCtrl.text.trim()),
+              onPressed: _aiLoading
+                  ? null
+                  : canAsk
+                      ? () => _askAI(_aiCtrl.text.trim())
+                      : !sub.isPro
+                          ? () => UpgradeSheet.show(
+                                context,
+                                featureName: 'AI Financial Chat',
+                                featureDescription:
+                                    'Ask anything about your finances — spending patterns, savings advice, budget analysis, and more.',
+                              )
+                          : null,
               style: FilledButton.styleFrom(
+                backgroundColor: canAsk ? null : AppTheme.textSecondary.withValues(alpha: 0.12),
+                foregroundColor: canAsk ? null : AppTheme.textSecondary,
                 minimumSize: Size.zero,
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -1100,8 +1289,18 @@ class _DashboardScreenState extends State<DashboardScreen>
                       width: 14, height: 14,
                       child: CircularProgressIndicator(
                           strokeWidth: 2, color: Colors.white))
-                  : const Icon(Icons.auto_awesome, size: 16),
-              label: Text(_aiLoading ? 'Thinking...' : 'Ask AI'),
+                  : Icon(
+                      canAsk
+                          ? Icons.auto_awesome
+                          : Icons.lock_outline_rounded,
+                      size: 16),
+              label: Text(_aiLoading
+                  ? 'Thinking...'
+                  : canAsk
+                      ? 'Ask AI'
+                      : sub.isPro
+                          ? 'Quota Reached'
+                          : 'Pro Only'),
             ),
           ),
           const SizedBox(height: 20),
@@ -1116,22 +1315,34 @@ class _DashboardScreenState extends State<DashboardScreen>
             runSpacing: 8,
             children: _suggested
                 .map((q) => GestureDetector(
-                      onTap: () => _askAI(q),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: AppTheme.accent.withValues(alpha: 0.08),
-                          border: Border.all(
-                              color:
-                                  AppTheme.accent.withValues(alpha: 0.25)),
-                          borderRadius: BorderRadius.circular(20),
+                      onTap: canAsk
+                          ? () => _askAI(q)
+                          : !sub.isPro
+                              ? () => UpgradeSheet.show(
+                                    context,
+                                    featureName: 'AI Financial Chat',
+                                    featureDescription:
+                                        'Ask anything about your finances — spending patterns, savings advice, budget analysis, and more.',
+                                  )
+                              : null,
+                      child: Opacity(
+                        opacity: canAsk ? 1.0 : 0.4,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: AppTheme.accent.withValues(alpha: 0.08),
+                            border: Border.all(
+                                color:
+                                    AppTheme.accent.withValues(alpha: 0.25)),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(q,
+                              style: const TextStyle(
+                                  fontSize: 12,
+                                  color: AppTheme.accent,
+                                  fontWeight: FontWeight.w500)),
                         ),
-                        child: Text(q,
-                            style: const TextStyle(
-                                fontSize: 12,
-                                color: AppTheme.accent,
-                                fontWeight: FontWeight.w500)),
                       ),
                     ))
                 .toList(),
@@ -1218,6 +1429,31 @@ class _DashboardScreenState extends State<DashboardScreen>
         ),
         child: const Icon(Icons.auto_awesome, size: 18, color: AppTheme.accent),
       );
+
+  Widget _proBadge() => GestureDetector(
+        onTap: () => Navigator.pushNamed(context, '/upgrade'),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF2B7BE0), Color(0xFF1B2A4A)],
+            ),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.lock_outline_rounded, size: 10, color: Colors.white),
+              SizedBox(width: 3),
+              Text('PRO',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold)),
+            ],
+          ),
+        ),
+      );
 }
 
 // ── Reusable section card ─────────────────────────────────────────────────────
@@ -1263,8 +1499,12 @@ class _Section extends StatelessWidget {
   final String title;
   final String subtitle;
   final Widget child;
+  final Widget? trailing;
   const _Section(
-      {required this.title, required this.subtitle, required this.child});
+      {required this.title,
+      required this.subtitle,
+      required this.child,
+      this.trailing});
 
   @override
   Widget build(BuildContext context) {
@@ -1274,11 +1514,18 @@ class _Section extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title,
-                style: const TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.primary)),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(title,
+                      style: const TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.primary)),
+                ),
+                if (trailing != null) trailing!,
+              ],
+            ),
             const SizedBox(height: 3),
             Text(subtitle,
                 style: const TextStyle(

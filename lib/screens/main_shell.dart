@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../core/theme/app_theme.dart';
 import '../core/providers/auth_provider.dart';
+import '../core/providers/subscription_provider.dart';
+import '../widgets/ad_banner_widget.dart';
 import 'dashboard/dashboard_screen.dart';
 import 'transactions/transactions_screen.dart';
 import 'recurring/recurring_screen.dart';
@@ -27,6 +29,14 @@ class MainShell extends StatefulWidget {
 class _MainShellState extends State<MainShell> {
   int _index = 0;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<SubscriptionProvider>().fetch();
+    });
+  }
 
   static const _screens = [
     DashboardScreen(),
@@ -301,7 +311,12 @@ class _MainShellState extends State<MainShell> {
       ),
 
       // ── Main content ─────────────────────────────────────────────────
-      body: IndexedStack(index: _index, children: _screens),
+      body: Column(
+        children: [
+          Expanded(child: IndexedStack(index: _index, children: _screens)),
+          const AdBannerWidget(),
+        ],
+      ),
     );
   }
 }

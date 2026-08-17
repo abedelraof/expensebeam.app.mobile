@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:file_picker/file_picker.dart';
 import '../../core/api/api_client.dart';
 import '../../core/providers/auth_provider.dart';
+import '../../core/providers/subscription_provider.dart';
 import '../../core/theme/app_theme.dart';
 import 'categories_screen.dart';
 
@@ -15,7 +16,6 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _loading = true;
-  final _apiKeyCtrl = TextEditingController();
   String _selectedCurrency = 'EGP';
 
   static const _currencies = [
@@ -29,12 +29,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _load();
   }
 
-  @override
-  void dispose() {
-    _apiKeyCtrl.dispose();
-    super.dispose();
-  }
-
   Future<void> _load() async {
     setState(() => _loading = true);
     try {
@@ -44,7 +38,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           : <String, dynamic>{};
       final c = data['currency'] ?? 'EGP';
       _selectedCurrency = _currencies.contains(c) ? c : 'EGP';
-      _apiKeyCtrl.text = data['claudeApiKey'] ?? '';
     } catch (_) {}
     setState(() => _loading = false);
   }
@@ -53,7 +46,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     try {
       await ApiClient.put('/settings', data: {
         'currency': _selectedCurrency,
-        'claudeApiKey': _apiKeyCtrl.text.trim(),
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -91,6 +83,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final auth = context.read<AuthProvider>();
+    final sub = context.watch<SubscriptionProvider>();
 
     return Scaffold(
       body: _loading
@@ -98,6 +91,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           : ListView(
               padding: const EdgeInsets.all(16),
               children: [
+                // Plan badge
+                _buildPlanBanner(sub),
+                const SizedBox(height: 16),
                 _section('Profile', [
                   DropdownButtonFormField<String>(
                     value: _selectedCurrency,
@@ -114,22 +110,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   FilledButton(
                       onPressed: _saveSettings,
                       child: const Text('Save Profile')),
-                ]),
-                const SizedBox(height: 16),
-                _section('AI', [
-                  TextFormField(
-                    controller: _apiKeyCtrl,
-                    obscureText: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Claude API Key',
-                      prefixIcon: Icon(Icons.key),
-                      hintText: 'sk-ant-...',
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  FilledButton(
-                      onPressed: _saveSettings,
-                      child: const Text('Save API Key')),
                 ]),
                 const SizedBox(height: 16),
                 _section('More', [
@@ -191,6 +171,81 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ]),
               ],
             ),
+    );
+  }
+
+  Widget _buildPlanBanner(SubscriptionProvider sub) {
+    final isPro = sub.isPro;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        gradient: isPro
+            ? AppTheme.headerGradient
+            : const LinearGradient(
+                colors: [Color(0xFFF5F7FA), Color(0xFFEAEEF5)],
+              ),
+        borderRadius: BorderRadius.circular(14),
+        border: isPro
+            ? null
+            : Border.all(color: AppTheme.fieldBorder),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            isPro
+                ? Icons.workspace_premium_rounded
+                : Icons.account_circle_outlined,
+            color: isPro ? Colors.amber : AppTheme.textSecondary,
+            size: 32,
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  isPro ? 'ExpenseBeam Pro' : 'Free Plan',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: isPro ? Colors.white : AppTheme.primary,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  isPro
+                      ? '${sub.aiUsed} / ${sub.aiLimit} AI requests used this month'
+                      : 'Upgrade to unlock AI features and remove ads',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isPro
+                        ? Colors.white.withValues(alpha: 0.75)
+                        : AppTheme.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (!isPro) ...[
+            const SizedBox(width: 8),
+            FilledButton(
+              onPressed: () => Navigator.pushNamed(context, '/upgrade'),
+              style: FilledButton.styleFrom(
+                backgroundColor: AppTheme.accent,
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 14, vertical: 10),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10)),
+                textStyle: const TextStyle(
+                    fontSize: 12, fontWeight: FontWeight.bold),
+              ),
+              child: const Text('Upgrade'),
+            ),
+          ],
+        ],
+      ),
     );
   }
 
