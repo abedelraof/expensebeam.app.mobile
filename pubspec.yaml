@@ -40,6 +40,23 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.14.3
+
+# Regenerate launcher icons with: dart run flutter_launcher_icons
+flutter_launcher_icons:
+  image_path: "assets/icon/app_icon.png"
+  android: "ic_launcher"
+  # Android 8+ masks the icon itself. Without an adaptive icon the launcher
+  # letterboxes the legacy one onto a white shape, so supply the artwork as a
+  # foreground over its own navy instead.
+  adaptive_icon_background: "#0B1445"
+  adaptive_icon_foreground: "assets/icon/app_icon.png"
+  adaptive_icon_foreground_inset: 18
+  ios: true
+  # App Store rejects icons with alpha; the source has transparent corners,
+  # so they get flattened onto the artwork's own navy rather than white.
+  remove_alpha_ios: true
+  background_color_ios: "#0B1445"
 
 flutter:
   uses-material-design: true

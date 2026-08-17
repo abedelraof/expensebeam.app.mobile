@@ -254,7 +254,7 @@ class _EditRecurringScreenState extends State<EditRecurringScreen> {
             _label('Repeat Interval'),
             const SizedBox(height: 4),
             DropdownButtonFormField<String>(
-              value: _interval,
+              initialValue: _interval,
               decoration: _inputDec(
                   hint: 'Select interval', icon: Icons.repeat_outlined),
               isExpanded: true,
@@ -274,7 +274,7 @@ class _EditRecurringScreenState extends State<EditRecurringScreen> {
             _catsLoading
                 ? _loadingField('Loading categories...')
                 : DropdownButtonFormField<String>(
-                    value: _categories.any((c) => c.name == _selectedCategory)
+                    initialValue: _categories.any((c) => c.name == _selectedCategory)
                         ? _selectedCategory
                         : null,
                     decoration: _inputDec(
@@ -300,7 +300,7 @@ class _EditRecurringScreenState extends State<EditRecurringScreen> {
             _label('Subcategory'),
             const SizedBox(height: 4),
             DropdownButtonFormField<String>(
-              value: _selectedCat != null &&
+              initialValue: _selectedCat != null &&
                       _selectedCat!.subcategories.contains(_selectedSubcategory)
                   ? _selectedSubcategory
                   : null,

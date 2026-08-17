@@ -465,7 +465,7 @@ class _IncomeScreenState extends State<IncomeScreen> {
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String?>(
-                value: tmpSource,
+                initialValue: tmpSource,
                 decoration: const InputDecoration(
                     labelText: 'Source',
                     prefixIcon: Icon(Icons.category_outlined, size: 18)),

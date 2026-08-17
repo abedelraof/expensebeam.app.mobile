@@ -211,7 +211,7 @@ class _EditIncomeScreenState extends State<EditIncomeScreen> {
             _label('Source'),
             const SizedBox(height: 4),
             DropdownButtonFormField<String>(
-              value: _source,
+              initialValue: _source,
               decoration: _inputDec(
                   hint: 'Select source',
                   icon: _sourceIcons[_source] ?? Icons.attach_money),

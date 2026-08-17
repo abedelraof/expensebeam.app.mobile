@@ -131,7 +131,7 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
             _label('Type'),
             const SizedBox(height: 4),
             DropdownButtonFormField<String>(
-              value: _type,
+              initialValue: _type,
               decoration: _inputDec(hint: 'Select type', icon: Icons.category_outlined),
               isExpanded: true,
               items: _types.map((t) => DropdownMenuItem(

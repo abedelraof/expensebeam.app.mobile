@@ -327,7 +327,7 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
             _catsLoading
                 ? _loadingField('Loading categories...')
                 : DropdownButtonFormField<String>(
-                    value: _categories.any((c) => c.name == _selectedCategory)
+                    initialValue: _categories.any((c) => c.name == _selectedCategory)
                         ? _selectedCategory
                         : null,
                     decoration: _inputDec(
@@ -354,7 +354,7 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
               _label('Subcategory'),
               const SizedBox(height: 4),
               DropdownButtonFormField<String>(
-                value: selCat != null &&
+                initialValue: selCat != null &&
                         selCat.subcategories.contains(_selectedSubcategory)
                     ? _selectedSubcategory
                     : null,

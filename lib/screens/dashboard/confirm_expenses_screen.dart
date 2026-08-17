@@ -462,7 +462,7 @@ class _ExpenseCardState extends State<_ExpenseCard> {
                     widget.categoriesLoading
                         ? const _LoadingField(label: 'Category')
                         : DropdownButtonFormField<String>(
-                            value: widget.categories
+                            initialValue: widget.categories
                                     .any((c) => c.name == f.category)
                                 ? f.category
                                 : null,
@@ -500,7 +500,7 @@ class _ExpenseCardState extends State<_ExpenseCard> {
                         selC != null &&
                         selC.subcategories.isNotEmpty) ...[
                       DropdownButtonFormField<String>(
-                        value: selC.subcategories.contains(f.subcategory)
+                        initialValue: selC.subcategories.contains(f.subcategory)
                             ? f.subcategory
                             : null,
                         decoration: const InputDecoration(

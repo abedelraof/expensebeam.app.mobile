@@ -1,4 +1,4 @@
-package com.expensebeam.expensebeam_mobile
+package com.expensebeam.app
 
 import io.flutter.embedding.android.FlutterActivity
 

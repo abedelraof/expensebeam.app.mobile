@@ -96,7 +96,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const SizedBox(height: 16),
                 _section('Profile', [
                   DropdownButtonFormField<String>(
-                    value: _selectedCurrency,
+                    initialValue: _selectedCurrency,
                     decoration: const InputDecoration(
                       labelText: 'Home Currency',
                       prefixIcon: Icon(Icons.currency_exchange),

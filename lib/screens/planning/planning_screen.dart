@@ -179,7 +179,7 @@ class _PlanningScreenState extends State<PlanningScreen> {
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                value: selectedCategory,
+                initialValue: selectedCategory,
                 decoration: const InputDecoration(
                   labelText: 'Category',
                   prefixIcon: Icon(Icons.category_outlined, size: 18),
@@ -206,7 +206,7 @@ class _PlanningScreenState extends State<PlanningScreen> {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                value: period,
+                initialValue: period,
                 decoration: const InputDecoration(labelText: 'Period'),
                 items: const [
                   DropdownMenuItem(value: 'weekly', child: Text('Weekly')),

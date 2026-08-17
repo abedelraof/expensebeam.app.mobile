@@ -67,7 +67,7 @@ class _BudgetsScreenState extends State<BudgetsScreen> {
               ),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
-                value: period,
+                initialValue: period,
                 decoration: const InputDecoration(labelText: 'Period'),
                 items: const [
                   DropdownMenuItem(
