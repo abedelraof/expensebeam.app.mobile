@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:provider/provider.dart';
@@ -14,8 +15,13 @@ class _AdBannerWidgetState extends State<AdBannerWidget> {
   BannerAd? _ad;
   bool _loaded = false;
 
-  // Test ad unit ID — replace with real ID before release
-  static const _adUnitId = 'ca-app-pub-3940256099942544/6300978111';
+  // Debug builds must never request the live unit — impressions we generate
+  // while developing count as invalid traffic and can get the AdMob account
+  // suspended. Google's test unit always fills, so the banner stays visible
+  // during development.
+  static const _testAdUnitId = 'ca-app-pub-3940256099942544/6300978111';
+  static const _liveAdUnitId = 'ca-app-pub-4569730514519597/3412890107';
+  static String get _adUnitId => kDebugMode ? _testAdUnitId : _liveAdUnitId;
 
   @override
   void initState() {

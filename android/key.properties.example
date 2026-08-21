@@ -1,0 +1,9 @@
+# Copy this file to android/key.properties and fill in your real values.
+# key.properties is gitignored — never commit it, and never commit the .jks.
+#
+# storeFile must be an ABSOLUTE path with forward slashes: file() in
+# app/build.gradle resolves relative paths against android/app, not the repo root.
+storePassword=your-store-password
+keyPassword=your-key-password
+keyAlias=upload
+storeFile=D:/keys/expensebeam-upload.jks
