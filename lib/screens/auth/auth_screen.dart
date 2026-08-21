@@ -590,7 +590,7 @@ class _AuthScreenState extends State<AuthScreen>
                     _TermsSection(
                       title: '1. Acceptance of Terms',
                       body:
-                          'By creating an account and using ExpenseBeam, you agree to be bound by these Terms of Service and our Privacy Policy. If you do not agree to these terms, please do not use our service.',
+                          'By creating an account and using ExpenseBeam, you agree to be bound by these Terms of Service and our Privacy Policy, available at expensebeam.com/privacy. If you do not agree to these terms, please do not use our service.',
                     ),
                     _TermsSection(
                       title: '2. Use of Service',
@@ -598,32 +598,52 @@ class _AuthScreenState extends State<AuthScreen>
                           'ExpenseBeam is a personal finance tracking application. You agree to use this service only for lawful purposes and in a manner that does not infringe the rights of others. You are responsible for maintaining the confidentiality of your account credentials.',
                     ),
                     _TermsSection(
-                      title: '3. Data Collection & Privacy',
+                      title: '3. Data We Collect',
                       body:
-                          'We collect the information you provide when registering and using the app, including email address, financial transaction data, and usage analytics. This data is used solely to provide and improve our service. We do not sell your personal data to third parties.',
+                          'We collect the email address you register with, the financial records you choose to enter, and standard technical information such as device type, app version and error diagnostics. We do not connect to your bank and we do not import transactions from financial institutions.',
                     ),
                     _TermsSection(
-                      title: '4. Data Security',
+                      title: '4. AI Features',
                       body:
-                          'We implement industry-standard security measures to protect your data. All data is encrypted in transit using TLS and at rest using AES-256 encryption. However, no method of transmission over the internet is 100% secure.',
+                          'When you use plain-language expense parsing or the in-app assistant, the text you submit is sent to Anthropic for processing and structured results are returned. This may include merchant names, amounts and any descriptions you wrote. If you prefer not to share this with a third party, you can add and edit every record manually instead.',
                     ),
                     _TermsSection(
-                      title: '5. Financial Data',
+                      title: '5. Advertising',
                       body:
-                          'ExpenseBeam stores expense and income records that you manually enter. We do not connect to your bank accounts or financial institutions unless you explicitly grant permission through a third-party integration. You retain full ownership of your financial data.',
+                          'The free tier displays banner advertising supplied by Google AdMob. To serve ads, Google collects device information including your advertising identifier. You can reset or delete that identifier, or opt out of personalised ads, under Settings, Google, Ads on your device. Subscribing to Pro removes advertising entirely.',
                     ),
                     _TermsSection(
-                      title: '6. Account Termination',
+                      title: '6. Subscriptions',
                       body:
-                          'You may delete your account at any time from the app settings. Upon deletion, all your personal data will be permanently removed from our servers within 30 days. We reserve the right to terminate accounts that violate these terms.',
+                          'ExpenseBeam Pro is billed through Google Play. Payment is handled entirely by Google and we never receive your card or bank details. Subscriptions renew automatically until cancelled, and you can manage or cancel yours at any time in the Google Play Store. Refunds are governed by Google Play policy.',
                     ),
                     _TermsSection(
-                      title: '7. Changes to Terms',
+                      title: '7. Data Sharing',
+                      body:
+                          'We do not sell your personal data. We share information only with the providers needed to run ExpenseBeam: Anthropic for AI features, Google AdMob for advertising on the free tier, Google Play for subscription status, and our hosting providers. We do not share your financial records with advertisers.',
+                    ),
+                    _TermsSection(
+                      title: '8. Data Security',
+                      body:
+                          'Traffic between the app and our servers is encrypted in transit using HTTPS, authentication uses signed tokens, and passwords are stored only in hashed form. However, no method of electronic storage or transmission is completely secure, and we cannot guarantee absolute security.',
+                    ),
+                    _TermsSection(
+                      title: '9. Your Financial Data',
+                      body:
+                          'ExpenseBeam stores the expense and income records you enter. You retain full ownership of that data, and you can edit or delete individual records at any time from within the app.',
+                    ),
+                    _TermsSection(
+                      title: '10. Account Termination',
+                      body:
+                          'To delete your account and the data associated with it, contact us at the address below and we will action the request. Deletion is permanent and your records cannot be recovered afterwards. We reserve the right to terminate accounts that violate these terms.',
+                    ),
+                    _TermsSection(
+                      title: '11. Changes to Terms',
                       body:
                           'We may update these terms from time to time. We will notify you of significant changes via email or in-app notification. Continued use of ExpenseBeam after changes constitutes acceptance of the new terms.',
                     ),
                     _TermsSection(
-                      title: '8. Contact Us',
+                      title: '12. Contact Us',
                       body:
                           'If you have any questions about these Terms or our Privacy Policy, please contact us at support@expensebeam.com. We aim to respond to all enquiries within 48 hours.',
                     ),
